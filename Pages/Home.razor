@@ -1,7 +1,96 @@
 ﻿@page "/"
+@inject NavigationManager NavigationManager
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<main class="container">
+    <div class="container border p-3">
+        <h1>Guessing Game</h1>
+        <h2>Make your guess</h2>
+        <p>the number is between 1 and 50</p>
+        <p style="font-size: xx-large; color: #0a53be;">@Status</p>
+        <div class="col-md-6 input-group flex-nowrap">
+            <span class="input-group-text" id="addon-wrapping">Guess</span>
+            <input type="number" @bind="GuessedNumber" class="form-control" placeholder="Username" aria-label="Username" aria-describedby="addon-wrapping">
+        </div>
+        <button type="button" class="m-3 btn btn-primary" @onclick="Try">Guess!</button>
+        <button type="button" class="m-3 btn btn-primary" @onclick="RefreshPage">New Game</button>
+    </div>
 
-Welcome to your new app.
+    <div class="container m-3 p-3">
+        <h2>History</h2>
+        @if (History.Any())
+        {
+            <ul class="list-group-flush list-group">
+                <li class="list-group-item active" aria-current="true">
+                    Last guess: @History.Last().Number - @History.Last().Status
+                </li>
+            </ul>
+            <ol class="list-group-flush list-group-numbered">
+                @foreach (var item in History)
+                {
+                    <li class="list-group-item">@item.Number: @item.Status</li>
+                }
+            </ol>
+        }
+    </div>
+
+</main>
+    
+@code {
+
+    private class Guess(int number, string status)
+    {
+        public int Number { get; set;  } = number;
+        public string? Status { get;  set; } = status ?? throw new ArgumentNullException(nameof(status));
+    }
+    
+    private static readonly int LuckyNumber = RandomNumber(1, 51);
+    private List<Guess> History { get; } = new List<Guess>();
+    private int GuessedNumber { get; set; }
+    private string Status { get;  set; } = "";
+
+
+    private void Try()
+    {
+        if (History.Any(guess => GuessedNumber == guess.Number))
+        {
+            Status = "Guess already made!";
+            return;
+        }
+
+        if (GuessedNumber < 1 || GuessedNumber > 50)
+        {
+            Status = "Guess out of range";
+            return;
+        }
+        
+        if (GuessedNumber < LuckyNumber)
+        {
+            Status = "Too lower!";
+            History.Add(new Guess(GuessedNumber, Status));
+            return;
+        }
+        
+        if (GuessedNumber > LuckyNumber)
+        {
+            Status = "Too high!";
+            History.Add(new Guess(GuessedNumber, Status));
+            return;
+        }
+        
+        Status = "Congrats!";
+        History.Add(new Guess(GuessedNumber, Status));
+    }
+
+    private static int RandomNumber(int rangeMin, int rangeMax)
+    {
+        Random rnd = new Random();
+        return rnd.Next(rangeMin, rangeMax);
+    }
+    
+    private void RefreshPage()
+    {
+        NavigationManager.NavigateTo("/", true);
+    }
+}
